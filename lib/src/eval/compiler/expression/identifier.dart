@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/src/dart/ast/to_source_visitor.dart';
 import 'package:dart_eval/dart_eval_bridge.dart';
 import 'package:dart_eval/src/eval/bridge/declaration.dart';
 import 'package:dart_eval/src/eval/compiler/context.dart';
@@ -109,11 +110,14 @@ Pair<TypeRef, DeclarationOrBridge>? resolveInstanceDeclaration(
     }
   }
   if ($extendsClause != null) {
-    final extendsType = ctx.visibleTypes[library]![
-        $extendsClause.superclass.name2.stringValue ??
-            $extendsClause.superclass.name2.value()]!;
-    return resolveInstanceDeclaration(
-        ctx, extendsType.file, extendsType.name, name);
+    var n = $extendsClause.superclass.name2.stringValue;
+    if (n == null) {
+      StringBuffer buffer = StringBuffer();
+      $extendsClause.superclass.accept(ToSourceVisitor(buffer));
+      n = buffer.toString();
+    }
+    final extendsType = ctx.visibleTypes[library]![n]!;
+    return resolveInstanceDeclaration(ctx, extendsType.file, extendsType.name, name);
   } else {
     final $type = ctx.visibleTypes[library]![$class]!;
     final objectType = CoreTypes.object.ref(ctx);

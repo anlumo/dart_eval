@@ -2,6 +2,7 @@
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/src/dart/ast/to_source_visitor.dart';
 import 'package:dart_eval/dart_eval_bridge.dart';
 import 'package:dart_eval/src/eval/compiler/expression/method_invocation.dart';
 import 'package:dart_eval/src/eval/compiler/model/function_type.dart';
@@ -151,9 +152,13 @@ class TypeRef {
           typeAnnotation.parent, library, ctx);
     }
     typeAnnotation as NamedType;
-    final n = typeAnnotation.name2.stringValue ?? typeAnnotation.name2.value();
-    final unspecifiedType =
-        ctx.temporaryTypes[library]?[n] ?? ctx.visibleTypes[library]?[n];
+    var n = typeAnnotation.name2.stringValue;
+    if (n == null) {
+      StringBuffer buffer = StringBuffer();
+      typeAnnotation.accept(ToSourceVisitor(buffer));
+      n = buffer.toString();
+    }
+    final unspecifiedType = ctx.temporaryTypes[library]?[n] ?? ctx.visibleTypes[library]?[n];
     if (unspecifiedType == null) {
       throw CompileError(
           'Unknown type $n', typeAnnotation.parent, library, ctx);
